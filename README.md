@@ -45,19 +45,24 @@ Example Usage
       roles:
         - sbitmedia.monit
       tasks:
-        - action: monit_check type=service name=ntpd
+        - name: Monit check for ntp service.
+          monit_check:
+            type: service
+            name: ntpd
+        - name: Monit check for ssh service.
+          action: monit_check type=service name=ssh
           when: monit_service is defined
 ```
 
 Notes:
-
- * It is mandatory to include the role before trying to use monit_check.
- * `monit_service` is a variable defined in the role, so if the variable is
-defined, the role is present and running the task makes sense.
- * `action: monit_check` is used instead of the direct form, in order to avoid
-syntax errors at compile time if the role is not included. This makes sense when
-using `monit_check` from another roles that don't know if sbitmedia.monit is
-available.
+ * `monit_check` actions needs the role to be included before. If you're using
+`monit_check` inside your own roles, add `sbitmedia.monit` as a role dependency,
+or use the second form shown above.
+ * `action: monit_check` with `when: monit_service is defined` is useful for a
+soft dependency on the role. This makes sense when using `monit_check` in a
+role that doesn't know if `sbitmedia.monit` is available.
+ * `monit_service` is a variable defined in the role. If the variable is
+defined, the role is present, and running the task makes sense.
 
 
 License
