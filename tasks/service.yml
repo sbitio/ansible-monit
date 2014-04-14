@@ -1,0 +1,7 @@
+---
+- name: Ensure service is started/stopped
+  service: name={{ monit_service }} state={{ monit_service_state }} enabled={{ monit_service_enabled }}
+  tags:
+   - monit
+   - service
+

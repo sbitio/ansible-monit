@@ -1,0 +1,15 @@
+---
+- name: Ensure apt packages
+  apt: pkg={{ item }} state={{ monit_pkg_state }}
+  with_items: monit_packages
+  tags:
+    - monit
+    - setup
+
+# Note: safe is a filter to obtain the raw value in yaml (yes instead of True)
+- name: Set default for whether to start on boot
+  lineinfile: dest=/etc/default/monit regexp="^startup" line="START={{ monit_service_enabled|safe }}" state=present
+  tags:
+    - monit
+    - setup
+

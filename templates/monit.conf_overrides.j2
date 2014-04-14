@@ -1,0 +1,58 @@
+# Managed by Ansible.
+
+set daemon {{ monit_check_interval }}
+    with start delay {{ monit_check_start_delay }}
+
+set logfile {{ monit_logfile }}
+
+set mailserver {{ monit_mailserver }}
+
+set eventqueue
+    basedir /var/monit  # set the base directory where events will be stored
+    slots 100           # optionaly limit the queue size
+
+{% if monit_mmonit_url is defined %}
+set mmonit {{ monit_mmonit_url }}
+{% endif %}
+
+set mail-format {
+{% if monit_mailformat_from is defined %}
+  from: {{ monit_mailformat_from }}
+{% else %}
+  from: monit@{{ ansible_hostname }}
+{% endif %}
+{% if monit_mailformat_replyto is defined %}
+  reply-to: {{ monit_mailformat_replyto }}
+{% endif %}
+{% if monit_mailformat_subject is defined %}
+  subject: {{ monit_mailformat_subject }}
+{% endif %}
+{% if monit_mailformat_message is defined %}
+  message: {{ monit_mailformat_message }}
+{% endif %}
+}
+
+{% if monit_alert is defined %}
+{% for alert in monit_alert %}
+  set alert {{ alert }}
+{% endfor %}
+{% endif %}
+
+{% if monit_httpserver %}
+  set httpd
+    signature disable
+    port {{ monit_httpserver_port }}
+{% if monit_httpserver_bind_address is defined %}
+    use address {{ monit_httpserver_bind_address }}
+{% endif %}
+{% if monit_httpserver_ssl and monit_httpserver_pemfile is defined %}
+     ssl enable
+     pemfile {{ monit_httpserver_pemfile }}
+{% endif %}
+{% if monit_httpserver_allow is defined %}
+{% for allow in monit_httpserver_allow %}
+    allow {{ allow }}
+{% endfor %}
+{% endif %}
+{% endif %}
+

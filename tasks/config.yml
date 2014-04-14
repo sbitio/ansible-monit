@@ -1,0 +1,17 @@
+---  
+- name: Ensure monit default config file
+  template: src=monit.conf.j2 dest={{ monit_file_conf }} backup=no owner=root group=root mode=0600
+  notify:
+    - restart monit
+  tags:
+    - monit
+    - config
+
+- name: Ensure monit daemon configuration
+  template: src=monit.conf_overrides.j2 dest={{ monit_confd_dir }}/00_monit_config backup=no owner=root group=root mode=0600
+  notify:
+    - restart monit
+  tags:
+    - monit
+    - config
+

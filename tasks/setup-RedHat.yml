@@ -1,0 +1,8 @@
+---
+- name: Ensure yum packages
+  yum: pkg={{ item }} state={{ monit_pkg_state }}
+  with_items: monit_packages
+  tags:
+    - monit
+    - setup
+

@@ -1,0 +1,5 @@
+---
+
+- name: restart monit
+  service: name={{ monit_service }} state=restarted
+

@@ -1,0 +1,34 @@
+---
+monit_service_enabled: yes
+monit_service_state: started
+monit_pkg_state: present
+
+
+# Variables below are used in templates/monit_conf_overrides.j2 
+# See http://mmonit.com/monit/documentation for reference.
+
+monit_check_interval: 60
+monit_check_start_delay: 120
+
+monit_logfile: syslog facility log_daemon
+
+#monit_mmonit_url: http://monit:monit@192.168.1.10:8080/collector
+
+monit_mailserver: 'localhost'
+#monit_mailformat_from: 
+#monit_mailformat_replyto:
+#monit_mailformat_subject:
+#monit_mailformat_message:
+
+#monit_alert:
+#  - sysadm@foo.bar
+#  - manager@foo.bar only on { timeout }
+
+monit_httpserver: no
+monit_httpserver_port: 2812
+#monit_httpserver_bind_address: 'localhost'
+monit_httpserver_ssl: yes
+#monit_httpserver_pemfile: '/path/to/pemfile'
+#monit_httpserver_allow:
+#  - 'user:pass'
+
