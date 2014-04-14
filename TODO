@@ -1,0 +1,7 @@
+- Add support for all monit types (at present we only support custom 'service' check type).
+
+- Template check_service.j2
+ - Add net tests
+ - Add socket tests
+
+
