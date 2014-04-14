@@ -1,0 +1,82 @@
+DOCUMENTATION = '''
+---
+module: monit_check
+options:
+  type:
+    description:
+      - Type of check to configure. Choices include all monit primitive checks,
+and also a high level 'service' check that is compound of several primitive
+checks to address monitoring of a service.
+    required: true
+    choices: [ 'process', 'file', 'fifo', 'filesystem', 'directory', 'host', 'system', 'program', 'service' ]
+    default: service
+  name:
+    description:
+      - Name of the thing to check.
+    required: true
+    aliases: []
+  priority:
+    description:
+      - Priority of the check. This is used to build the check filename (f.e: 20_check_process_apache).
+    required: false
+    default: 20
+  group:
+    description:
+      - Group of the check. Defaults to {{ name }}.
+    required: false
+  alert:
+    description:
+      - Alert snippet. Example: "foo@bar { nonexist, timeout, resource, icmp, connection }". See https://mmonit.com/monit/documentation/monit.html#setting_an_alert_recipient for reference.
+    required: false
+  bin:
+    description:
+      - Path to the binary of the service to check. Defaults to '/usr/sbin/{{ name }}'.
+      - Only useful for checks of type: service.
+    required: false
+  path:
+    description:
+      - Path to the thing to check.
+      - Only useful for checks of type: file, fifo, filesystem, directory, program.
+    required: true
+  pidfile:
+    description:
+      - Path to process pidfile. Defaults to '/var/run/{{ name }}.pid'.
+      - Only useful for checks of type: process, service.
+    required: false
+  initd:
+    description:
+      - Path to the initd script. Defaults to '/etc/init.d/{{ name }}'.
+      - Only useful for checks of type: process, service.
+    required: false
+  start_program:
+    description:
+      - Command to start the process. Defaults to '{{ initd }} start'.
+      - Only useful for checks of type: process, service.
+    required: false
+  stop_program:
+    description:
+      - Command to stop the process.  Defaults to '{{ initd }} stop'.
+      - Only useful for checks of type: process, service.
+    required: false
+  resource_tests:
+    description:
+      - List of resource tests. Each item in the list is a hash.
+      - Required keys are resource, operator, value and action.
+      - Only useful for checks of type: system, process, service.
+    required: false
+  service_timeout_restarts:
+    description: Number of restarts for service timeout.
+      - Only useful for checks of type: process, service.
+    required: false
+    default: 5
+  service_timeout_poll_cycles:
+    description: Number of poll-cycles for service timeout.
+      - Only useful for checks of type: process, service.
+    required: false
+    default: 5
+  service_timeout_action:
+    description: Action to take on service timeout.
+      - Only useful for checks of type: process, service.
+    required: false
+    default: timeout
+'''

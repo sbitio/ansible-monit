@@ -1,0 +1,25 @@
+check process {{ name }} with pidfile {{ pidfile }}
+  group {{ group }}
+{% if alert is defined %}
+  alert {{ alert }}
+{% endif %}
+  start program = "{{ start_program }}"
+  stop program  = "{{ stop_program }}"
+
+{% for test in resource_tests %}
+  if {{ test.resource }} {{ test.operator }} {{ test.value }} then {{ test.action }}
+{% endfor %}
+
+{% if service_timeout_restarts and service_timeout_poll_cycles and service_timeout_action -%}
+  if {{ service_timeout_restarts }} restarts within {{ service_timeout_poll_cycles }} cycles then {{ service_timeout_action }}
+{% endif %}
+
+  depends {{ name }}_init
+  depends {{ name }}_bin
+
+check file {{ name }}_init with path {{ initd }}
+  group {{ group }}
+
+check file {{ name }}_bin with path {{ bin }}
+  group {{ group }}
+
