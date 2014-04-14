@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: Jonathan Araña Cruz
+  description: Configures monit.
+  company: your company (optional)
+  company: SB IT Media, S.L.
+  license: license BSD
+  min_ansible_version: 1.5
+  platforms:
+  - name: EL
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  - name: Debian
+    versions:
+    - all
+  categories:
+  - monitoring
+dependencies: []
+
