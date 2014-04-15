@@ -58,11 +58,19 @@ checks to address monitoring of a service.
       - Command to stop the process.  Defaults to '{{ initd }} stop'.
       - Only useful for checks of type: process, service.
     required: false
-  resource_tests:
+  tests:
     description:
-      - List of resource tests. Each item in the list is a hash.
-      - Required keys are resource, operator, value and action.
-      - Only useful for checks of type: system, process, service.
+      - List of tests. Each item in the list is a hash.
+      - Test options vary highly depending on the check type.
+      - Valid keys are: type, operator, value, tolerance and action (and exec).
+        - type: type of test.
+        - operator: operator to compare the resource to test against a value.
+        - value: value for the comparison.
+        - tolerance: dict accepting keys 'times'(optional) and 'cycles'.
+        - action: action to take if the test condition is met.
+        - exec: command to run if the action is of type exec.
+      - Everything but "value" and "exec" is validated. See monit documentation
+        for allowed values and other details https://mmonit.com/monit/documentation/monit.html
     required: false
   service_timeout_restarts:
     description: Number of restarts for service timeout.

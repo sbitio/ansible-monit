@@ -18,12 +18,3 @@ CHECK PROCESS {{ name }} WITH PIDFILE {{ pidfile }}
     THEN {{ service_timeout_action }}
 {% endif %}
 
-  DEPENDS {{ name }}_init
-  DEPENDS {{ name }}_bin
-
-CHECK FILE {{ name }}_init WITH PATH {{ initd }}
-  GROUP {{ group }}
-
-CHECK FILE {{ name }}_bin WITH PATH {{ bin }}
-  GROUP {{ group }}
-

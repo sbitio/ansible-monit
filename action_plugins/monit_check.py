@@ -13,22 +13,32 @@ class ActionModule(object):
         # note: since this module just calls the template module, the --check mode support
         # can be implemented entirely over there
 
-        VALID_CHECK_TYPES = [ 'process', 'file', 'fifo', 'filesystem', 'directory', 'host', 'system', 'program', 'service']
-
-        RESOURCE_TEST_TYPES = {
-          'system': ['cpu(user)', 'cpu(system)', 'cpu(wait)', 'swap',
-                     'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
-                    ],
-          'process': ['cpu', 'total cpu', 'children', 'total memory',
-                     'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
-                    ],
+        CHECK_TYPES = ['directory', 'fifo', 'file', 'filesystem', 'host', 'process', 'program', 'service', 'system']
+        TEST_TYPES = {
+          'directory': [],
+          'fifo': [],
+          'file': [],
+          'filesystem': [
+              'fsflags', 'space', 'inode', 'perm', 'permission',
+          ],
+          'host': [],
+          'process': [
+              'cpu', 'total cpu', 'children', 'total memory',
+              'mem', 'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
+          ],
+          'program': [],
+          'service': [],
+          'system': [
+              'cpu(user)', 'cpu(system)', 'cpu(wait)', 'swap',
+              'mem', 'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
+          ],
         }
-        RESOURCE_TEST_OPERATORS = [
+        TEST_ACTIONS = ['alert', 'restart', 'start', 'stop', 'exec', 'unmonitor']
+        TEST_OPERATORS = [
           '<', '>', '!=', '==',
           'gt', 'lt', 'eq', 'ne',
           'greater', 'less', 'equal', 'notequal',
         ]
-        RESOURCE_TEST_ACTIONS = ['alert', 'restart', 'start', 'stop', 'exec', 'unmonitor']
 
         # Load up options.
         options  = {}
@@ -39,9 +49,9 @@ class ActionModule(object):
 
         # Validate the check type is valid and supported.
         check_type = options.get('type', 'service').lower()
-        if check_type not in VALID_CHECK_TYPES:
+        if check_type not in CHECK_TYPES:
             raise Exception("Unknown check type: '%s'" % check_type)
-        if check_type not in ('service', 'system'):
+        if check_type not in ('filesystem', 'process', 'service', 'system'):
             raise Exception("Check type not supported yet: '%s'" % check_type)
 
         # Global options.
@@ -56,6 +66,7 @@ class ActionModule(object):
         if options.has_key('alert'):
             inject['alert'] = options.get('alert')
 
+        #TODO# program?
         if check_type in ('process', 'service'):
             inject['pidfile']       = options.get('pidfile', '/var/run/%s.pid' % name)
             inject['initd']         = options.get('initd', '/etc/init.d/%s' % name)
@@ -66,28 +77,69 @@ class ActionModule(object):
             inject['service_timeout_poll_cycles'] = options.get('service_timeout_poll_cycles', 5)
             inject['service_timeout_action']      = options.get('service_timeout_action', 'timeout')
 
-        if check_type in ('process', 'system', 'service'):
-            resource_tests = options.get('resource_tests', [])
-            for test in resource_tests:
-                if type(test) is not dict:
-                    raise Exception("Resource tests: expected a hash '%s'" % test)
-                required = ('resource', 'operator', 'value', 'action')
-                missing = [val for val in test.keys() if val not in required]
-                if len(missing) > 0:
-                    raise Exception("Resource tests: missing keys in hash '%s'" % ', '.join(missing))
-                if test['resource'].lower() not in RESOURCE_TEST_TYPES[check_type]:
-                    raise Exception("Resource tests: test type '%s' is not valid for '%s' check" % (test['resource'], check_type))
-                if test['operator'].lower() not in RESOURCE_TEST_OPERATORS:
-                    raise Exception("Resource tests: invalid operator '%s'" % test['operator'])
-                # TODO validate test.value
-                if not test.has_key('action'):
-                    test['action'] = 'alert'
-                elif test['action'].lower() not in RESOURCE_TEST_ACTIONS:
-                    raise Exception("Resource tests: invalid action '%s'" % test['action'])
-            inject['resource_tests'] = resource_tests
-
-        if check_type in ('file', 'fifo', 'filesystem', 'directory', 'program'):
+        if check_type in ('directory', 'fifo', 'file', 'filesystem', 'program'):
             inject['path'] = options.get('path')
+
+        # Tests.
+        inject['tests'] = []
+        for test in options.get('tests', []):
+            if type(test) is not dict:
+                raise Exception("Tests for %s '%s': expected a hash '%s'" % (check_type, name, test))
+
+            # Test type is valid.
+            if test['type'].lower() not in TEST_TYPES[check_type]:
+                raise Exception("Tests for %s '%s': invalid test type '%s'" % (check_type, name, test['type']))
+
+            # Test operator is valid.
+            if test.has_key('operator') and test['operator'].lower() not in TEST_OPERATORS:
+                raise Exception("Tests for %s '%s' (%s): invalid operator '%s'" % (check_type, name, test['type'], test['operator']))
+
+            # Test failure tolerance.
+            if test.has_key('tolerance'):
+                if (type(test['tolerance']) is not dict or not test['tolerance'].has_key('cycles')):
+                    raise Exception("Tests for %s '%s' (%s): tolerance must be a hash. Valid keys: times(optional), cycles." % (check_type, name, test['type']))
+                else:
+                    if test['tolerance'].has_key('times'):
+                        tolerance = 'FOR %(times)s TIMES WITHIN %(cycles)s CYCLES'
+                    else:
+                        tolerance = 'FOR %(cycles)s CYCLES'
+                    test['tolerance'] = tolerance % test['tolerance']
+
+            # Test action.
+            if not test.has_key('action'):
+                test['action'] = 'alert'
+            elif test['action'].lower() not in TEST_ACTIONS:
+                raise Exception("Tests for %s '%s' (%s): invalid action '%s'" % (check_type, name, test['type'], test['action']))
+            elif test['action'].lower() == 'exec' and not test.has_key('exec'):
+                raise Exception("Tests for %s '%s' (%s): missing command for exec action" % (check_type, name, test['type']))
+
+            # Validate mandatory keys for:
+            # RESOURCE TESTING: IF resource operator value THEN action
+            # SPACE TESTING:    IF SPACE operator value unit THEN action
+            # INODE TESTING:    IF INODE operator value [unit] THEN action
+            # Note: We don't mind "unit", it must be part of the value.
+            if check_type in ('process', 'system', 'service') or test['type'].lower() in ('space', 'inode'):
+                if not test.has_key('operator'):
+                    raise Exception("Tests for %s '%s' (%s): 'operator' is mandatory" % (check_type, name, test['type']))
+                if not test.has_key('value'):
+                    raise Exception("Tests for %s '%s' (%s): 'value' is mandatory" % (check_type, name, test['type']))
+                condition = '%(type)s %(operator)s %(value)s'
+
+            # FILESYSTEM FLAGS TESTING
+            if test['type'] == 'fsflags':
+                condition = 'CHANGED %(type)s'
+
+            # PERMISSION TESTING
+            if test['type'] in ('perm', 'permission'):
+                if not test.has_key('value'):
+                    raise Exception("Tests for %s '%s' (%s): 'value' is mandatory" % (check_type, name, test['type']))
+                condition = 'FAILED %(type)s %(value)s'
+
+            test['type'] = test['type'].upper()
+            if test.has_key('operator'):
+                test['operator'] = test['operator'].upper()
+            test['condition'] = condition % test
+            inject['tests'].append(test)
 
         # Prepare parameters to run the template.
         # Is there a shortcut to obtain the path to this role/action/module?

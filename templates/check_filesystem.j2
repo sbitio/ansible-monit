@@ -1,11 +1,12 @@
-CHECK SYSTEM {{ name }}
+CHECK FILESYSTEM {{ name }} WITH PATH {{ path }}
+  GROUP {{ group }}
 {% if alert is defined %}
   ALERT {{ alert }}
 {% endif %}
 {% for test in tests %}
   IF {{ test.condition }}
 {% if test.tolerance is defined %}
-    {{ test.tolerance }}
+    FOR {{ test.tolerance }}
 {% endif %}
     THEN {{ test.action }}
 {% endfor %}
