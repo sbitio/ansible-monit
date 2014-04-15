@@ -42,15 +42,60 @@ Example Usage
 
 ```yaml
     - hosts: servers
+      vars:
+        monit_check_system_resource_tests:
+          - type: 'loadavg(1min)'
+            operator: '>'
+            value: 24
+            tolerance:
+              times: 3
+              cycles: 5
+          - type: 'loadavg(5min)'
+            operator: '>'
+            value: 12
+          - type: 'memory'
+            operator: '>'
+            value: 75%
+
+        monit_check_filesystems:
+          - name: rootfs
+            path: /
+            tests:
+              - type: fsflags
+              - type: permission
+                value: '0755'
+              - type: space
+                operator: '>'
+                value: 80%
+
       roles:
         - sbitmedia.monit
+
       tasks:
         - name: Monit check for ntp service.
           monit_check:
             type: service
             name: ntpd
+
         - name: Monit check for ssh service.
           action: monit_check type=service name=ssh
+          when: monit_service is defined
+
+        - name: Ensure monit system check
+          action: monit_check
+          args:
+            type: system
+            tests: "{{ monit_check_system_resource_tests }}"
+          when: monit_service is defined
+
+        - name: Ensure monit filesystems check
+          action: monit_check
+          args:
+            type: filesystem
+            name: "{{ item.name }}"
+            path: "{{ item.path }}"
+            tests: "{{ item.tests }}"
+          with_items: monit_check_filesystems
           when: monit_service is defined
 ```
 

@@ -1,7 +1,18 @@
-- Add support for all monit types (at present we only support custom 'service' check type).
+- Support EVERY: https://mmonit.com/monit/documentation/monit.html#service_poll_time
 
-- Template check_service.j2
- - Add net tests
- - Add socket tests
+- Support SUCCEEDED predicate: IF <TEST> THEN <ACTION> [ELSE IF SUCCEEDED THEN ACTION]
 
+- Support EXISTENCE TESTING
+- Support FILE CHECKSUM TESTING
+- Support TIMESTAMP TESTING
+- Support FILE SIZE TESTING
+- Support FILE CONTENT TESTING
+- Support UID TESTING
+- Support GID TESTING
+- Support PID TESTING
+- Support PPID TESTING
+- Support PROCESS UPTIME TESTING
+- Support PROGRAM STATUS TESTING
+- Support PING TESTING
+- Support CONNECTION TESTING
 
