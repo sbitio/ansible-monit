@@ -1,0 +1,10 @@
+check system {{ name }}
+  group {{ group }}
+{% if alert is defined %}
+  alert {{ alert }}
+{% endif %}
+
+{% for test in resource_tests %}
+  if {{ test.resource }} {{ test.operator }} {{ test.value }} then {{ test.action }}
+{% endfor %}
+

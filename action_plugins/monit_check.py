@@ -15,21 +15,39 @@ class ActionModule(object):
 
         VALID_CHECK_TYPES = [ 'process', 'file', 'fifo', 'filesystem', 'directory', 'host', 'system', 'program', 'service']
 
+        RESOURCE_TEST_TYPES = {
+          'system': ['cpu(user)', 'cpu(system)', 'cpu(wait)', 'swap',
+                     'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
+                    ],
+          'process': ['cpu', 'total cpu', 'children', 'total memory',
+                     'memory', 'loadavg(1min)', 'loadavg(5min)', 'loadavg(15min)'
+                    ],
+        }
+        RESOURCE_TEST_OPERATORS = [
+          '<', '>', '!=', '==',
+          'gt', 'lt', 'eq', 'ne',
+          'greater', 'less', 'equal', 'notequal',
+        ]
+        RESOURCE_TEST_ACTIONS = ['alert', 'restart', 'start', 'stop', 'exec', 'unmonitor']
+
         # Load up options.
         options  = {}
         if complex_args:
             options.update(complex_args)
+
         options.update(utils.parse_kv(module_args))
 
         # Validate the check type is valid and supported.
-        check_type = options.get('type', 'service')
+        check_type = options.get('type', 'service').lower()
         if check_type not in VALID_CHECK_TYPES:
             raise Exception("Unknown check type: '%s'" % check_type)
-        if check_type != 'service':
+        if check_type not in ('service', 'system'):
             raise Exception("Check type not supported yet: '%s'" % check_type)
 
         # Global options.
-        name = options.get('name')
+        name = options.get('name', None)
+        if name is None and check_type == 'system':
+            name = inject['inventory_hostname']
         priority = options.get('priority', 20)
 
         # General options (any type of check).
@@ -48,37 +66,24 @@ class ActionModule(object):
             inject['service_timeout_poll_cycles'] = options.get('service_timeout_poll_cycles', 5)
             inject['service_timeout_action']      = options.get('service_timeout_action', 'timeout')
 
-        RESOURCE_TEST_TYPES = {
-          'system': ['CPU(user)', 'CPU(system)', 'CPU(wait)', 'SWAP',
-                     'MEMORY', 'LOADAVG(1min)', 'LOADAVG(5min)', 'LOADAVG(15min)'
-                    ],
-          'process': ['CPU', 'TOTAL CPU', 'CHILDREN', 'TOTAL MEMORY',
-                     'MEMORY', 'LOADAVG(1min)', 'LOADAVG(5min)', 'LOADAVG(15min)'
-                    ],
-        }
-        RESOURCE_TEST_OPERATORS = [
-          "<", ">", "!=", "==",
-          "gt", "lt", "eq", "ne",
-          "greater", "less", "equal", "notequal",
-        ]
-        RESOURCE_TEST_ACTIONS = ["ALERT", "RESTART", "START", "STOP", "EXEC", "UNMONITOR"]
-
         if check_type in ('process', 'system', 'service'):
             resource_tests = options.get('resource_tests', [])
             for test in resource_tests:
                 if type(test) is not dict:
-                    raise Exception("Resource tests: expected a hash %s" % test)
+                    raise Exception("Resource tests: expected a hash '%s'" % test)
                 required = ('resource', 'operator', 'value', 'action')
                 missing = [val for val in test.keys() if val not in required]
                 if len(missing) > 0:
-                    raise Exception("Resource tests: missing keys in hash %s" % ', '.join(missing))
-                if test.resource not in RESOURCE_TEST_TYPES[check_type]:
-                    raise Exception("Resource tests: test type %s is not valid for %s check" (test.resource, check_type))
-                if test.operator not in RESOURCE_TEST_OPERATORS:
-                    raise Exception("Resource tests: invalid operator %s" % test.operator)
+                    raise Exception("Resource tests: missing keys in hash '%s'" % ', '.join(missing))
+                if test['resource'].lower() not in RESOURCE_TEST_TYPES[check_type]:
+                    raise Exception("Resource tests: test type '%s' is not valid for '%s' check" % (test['resource'], check_type))
+                if test['operator'].lower() not in RESOURCE_TEST_OPERATORS:
+                    raise Exception("Resource tests: invalid operator '%s'" % test['operator'])
                 # TODO validate test.value
-                if test.action not in RESOURCE_TEST_ACTIONS:
-                    raise Exception("Resource tests: invalid action %s" % test.action)
+                if not test.has_key('action'):
+                    test['action'] = 'alert'
+                elif test['action'].lower() not in RESOURCE_TEST_ACTIONS:
+                    raise Exception("Resource tests: invalid action '%s'" % test['action'])
             inject['resource_tests'] = resource_tests
 
         if check_type in ('file', 'fifo', 'filesystem', 'directory', 'program'):
@@ -90,7 +95,7 @@ class ActionModule(object):
         src = os.path.realpath(os.path.dirname(action_path) + '/../templates/check_%s.j2' % check_type)
         dest = os.path.join(inject['monit_confd_dir'], '%s_check_%s_%s' % (priority, check_type, name))
 
-        module_args = "src=%s dest=%s" % (src, dest)
+        module_args = 'src=%s dest=%s' % (src, dest)
         handler = utils.plugins.action_loader.get('template', self.runner)
         result = handler.run(conn, tmp, 'template', module_args, inject)
 

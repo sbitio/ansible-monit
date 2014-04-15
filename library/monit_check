@@ -12,8 +12,8 @@ checks to address monitoring of a service.
     default: service
   name:
     description:
-      - Name of the thing to check.
-    required: true
+      - Name of the thing to check. It is mandatory for any check but system. In system checks it defaults to the inventory hostname.
+    required: false
     aliases: []
   priority:
     description:
