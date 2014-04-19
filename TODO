@@ -16,3 +16,10 @@
 - Support PING TESTING
 - Support CONNECTION TESTING
 
+Document a pattern to allow roles leveraging this one to skip monit. Implement
+the pattern in sbitmedia.fail2ban, etc. Example:
+
+```yaml
+when: monit_service is defined and fail2ban_monit_skip is not defined
+```
+
