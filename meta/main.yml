@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Jonathan Araña Cruz
-  description: Configures monit.
+  description: Manage Monit. Provides a module to configure checks.
   company: your company (optional)
   company: SB IT Media, S.L.
   license: license BSD
