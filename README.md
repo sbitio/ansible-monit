@@ -128,8 +128,8 @@ role that doesn't know if `sbitmedia.monit` is available.
 defined, the role is present, and running the task makes sense.
 
 
-Leverage monit role
--------------------
+Leverage monit in your roles
+----------------------------
 
 Sumarizing above notes. There's two ways to leverage this role in your own roles.
 
