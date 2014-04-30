@@ -43,7 +43,7 @@ Default variables are documented in [`defaults/main.yml`](defaults/main.yml).
 
 Role variables are set per OS. See: [`vars/*.yml`](vars/).
 
-See also the params accepted by `monit_check` in [`library/monit_check`](library/monit_check).
+See also the args accepted by `monit_check` in [`library/monit_check`](library/monit_check).
 
 
 Example Usage
