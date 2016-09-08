@@ -1,3 +1,5 @@
+# *This role is abandoned.*
+
 Monit
 =====
 
